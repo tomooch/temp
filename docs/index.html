@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#05070b" />
+<title>日本の歴史 — 紀元前から現在まで</title>
+<style>
+  :root{
+    --bg:#05070b; --fg:#f7f5ef; --muted:rgba(247,245,239,.67); --line:rgba(255,255,255,.16);
+    --accent:#efc76d; --glass:rgba(10,12,18,.56); --safe-b:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;width:100%;height:100%;background:var(--bg);color:var(--fg);overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic UI","Yu Gothic",Meiryo,sans-serif}
+  body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+  button,input{font:inherit}
+  button{color:inherit}
+  #app{position:relative;width:100%;height:100%;background:#05070b;isolation:isolate}
+  #stage{position:absolute;inset:0;overflow:hidden;background:radial-gradient(circle at 50% 28%,#182237 0,#080b12 45%,#030407 100%)}
+  #webgl{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:.92;transition:opacity .22s ease,filter .3s ease;filter:saturate(1.04)}
+  #vignette{pointer-events:none;position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.40) 0%,rgba(0,0,0,.02) 25%,rgba(0,0,0,.08) 56%,rgba(0,0,0,.78) 100%),radial-gradient(ellipse at center,transparent 44%,rgba(0,0,0,.48) 100%);z-index:2}
+  #grain{pointer-events:none;position:absolute;inset:-50%;z-index:3;opacity:.065;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.88' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");animation:grain .32s steps(2) infinite}
+  @keyframes grain{0%{transform:translate(0,0)}25%{transform:translate(3%,-2%)}50%{transform:translate(-2%,4%)}75%{transform:translate(4%,1%)}100%{transform:translate(0,0)}}
+  #topline{position:absolute;z-index:8;top:0;left:0;right:0;height:3px;background:rgba(255,255,255,.12)}
+  #topline>i{display:block;height:100%;width:0;background:var(--accent);box-shadow:0 0 18px var(--accent);transition:width .12s linear}
+  .topbar{position:absolute;z-index:7;top:calc(14px + env(safe-area-inset-top,0px));left:16px;right:16px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .brand{font-size:12px;letter-spacing:.14em;font-weight:700;text-shadow:0 1px 12px #000}
+  .chapter-count{font-size:11px;font-variant-numeric:tabular-nums;color:var(--muted);letter-spacing:.08em}
+  .ghost{appearance:none;border:1px solid var(--line);background:rgba(10,12,18,.35);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:999px;padding:9px 12px;min-height:36px;font-size:12px;font-weight:700}
+  #copy{position:absolute;z-index:6;left:20px;right:20px;bottom:calc(132px + var(--safe-b));max-width:580px;transition:opacity .18s ease,transform .28s cubic-bezier(.2,.7,.2,1)}
+  #era{display:block;color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.13em;margin-bottom:8px;text-shadow:0 1px 12px rgba(0,0,0,.8)}
+  #title{margin:0;font-family:"Hiragino Mincho ProN","Yu Mincho",serif;font-size:clamp(30px,9vw,48px);line-height:1.05;letter-spacing:.02em;text-wrap:balance;text-shadow:0 3px 24px rgba(0,0,0,.75)}
+  #fact{margin:12px 0 0;max-width:42em;font-size:14px;line-height:1.8;font-weight:520;color:rgba(255,255,255,.88);text-shadow:0 2px 16px rgba(0,0,0,.8)}
+  #dramatic{margin:8px 0 0;font-size:12px;line-height:1.65;color:rgba(255,255,255,.58);font-style:italic;text-shadow:0 2px 12px #000}
+  #caption{position:absolute;z-index:6;left:20px;top:calc(74px + env(safe-area-inset-top,0px));width:min(70vw,340px);font-size:11px;line-height:1.55;letter-spacing:.02em;color:rgba(255,255,255,.55);text-shadow:0 1px 12px #000}
+  .controls{position:absolute;z-index:9;left:12px;right:12px;bottom:calc(12px + var(--safe-b));padding:10px 10px 9px;border:1px solid rgba(255,255,255,.14);border-radius:20px;background:rgba(5,7,11,.56);box-shadow:0 14px 40px rgba(0,0,0,.35);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+  .control-row{display:grid;grid-template-columns:40px 1fr 40px 40px;gap:8px;align-items:center}
+  .iconbtn{appearance:none;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.075);height:40px;width:40px;border-radius:12px;display:grid;place-items:center;font-size:16px;font-weight:800;padding:0}
+  .iconbtn:active,.ghost:active{transform:scale(.97)}
+  #scrub{width:100%;appearance:none;height:24px;background:transparent;margin:0}
+  #scrub::-webkit-slider-runnable-track{height:3px;border-radius:4px;background:linear-gradient(90deg,var(--accent) var(--scrub-p,0%),rgba(255,255,255,.18) var(--scrub-p,0%))}
+  #scrub::-webkit-slider-thumb{appearance:none;width:18px;height:18px;margin-top:-7.5px;border-radius:50%;background:#fff;border:5px solid rgba(0,0,0,.28);box-shadow:0 1px 8px rgba(0,0,0,.5)}
+  .hint{margin-top:5px;text-align:center;color:rgba(255,255,255,.42);font-size:10px;letter-spacing:.04em}
+  #sheet{position:absolute;z-index:20;left:8px;right:8px;bottom:8px;max-height:min(76vh,680px);overflow:auto;border:1px solid rgba(255,255,255,.14);border-radius:24px 24px 18px 18px;padding:20px 18px calc(20px + var(--safe-b));background:rgba(9,11,16,.92);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);box-shadow:0 -20px 70px rgba(0,0,0,.45);transform:translateY(calc(100% + 20px));transition:transform .32s cubic-bezier(.2,.85,.25,1)}
+  #sheet.open{transform:translateY(0)}
+  #sheet h2{margin:0 44px 6px 0;font-size:20px;font-family:"Hiragino Mincho ProN","Yu Mincho",serif}
+  #sheet p{margin:10px 0;color:rgba(255,255,255,.72);font-size:13px;line-height:1.8}
+  #sheet .close{position:absolute;right:14px;top:14px}
+  .source-link{display:block;text-decoration:none;color:#fff;padding:12px 0;border-top:1px solid rgba(255,255,255,.11);font-size:13px;line-height:1.55}
+  .source-link small{display:block;color:rgba(255,255,255,.46);margin-top:3px}
+  .note{padding:11px 12px;border-radius:14px;background:rgba(255,255,255,.055);font-size:12px!important;color:rgba(255,255,255,.62)!important}
+  #load-error{display:none;position:absolute;z-index:30;left:18px;right:18px;top:50%;transform:translateY(-50%);padding:18px;border:1px solid rgba(255,255,255,.16);background:rgba(10,12,18,.88);border-radius:18px;font-size:13px;line-height:1.7}
+  #load-error b{display:block;margin-bottom:6px;color:#fff}
+  .switching #copy{opacity:0;transform:translateY(8px)}
+  .switching #webgl{opacity:.20;filter:blur(7px) saturate(.65)}
+  @media (min-width:700px){
+    #copy{left:6vw;right:auto;width:520px;bottom:116px}.controls{left:50%;right:auto;width:min(620px,88vw);transform:translateX(-50%)}.topbar{left:6vw;right:6vw}#caption{left:6vw}.hint{font-size:11px}
+  }
+  @media (max-height:620px){#copy{bottom:110px}#title{font-size:30px}#fact{font-size:12.5px;line-height:1.62}.hint{display:none}}
+  @media (prefers-reduced-motion:reduce){#grain{animation:none}#copy,#webgl,#sheet{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage" aria-label="日本史の3D映像">
+    <canvas id="webgl"></canvas>
+    <div id="vignette"></div><div id="grain"></div>
+  </div>
+  <div id="topline"><i></i></div>
+  <header class="topbar">
+    <div><div class="brand">日本の歴史</div><div class="chapter-count" id="count">01 / 24</div></div>
+    <button class="ghost" id="infoBtn" aria-controls="sheet" aria-expanded="false">史実・出典</button>
+  </header>
+  <div id="caption">紀元前から2026年まで。史実を軸に、象徴的な3D演出で時代をつなぐ。</div>
+  <main id="copy" aria-live="polite">
+    <span id="era">約3万7000年前〜</span>
+    <h1 id="title">列島に、人がいた。</h1>
+    <p id="fact">日本列島では約3万7000年前から人類の活動が確認されている。石器を携え、気候と獲物を追いながら暮らした。</p>
+    <p id="dramatic">海と陸の境目さえ、いまの日本とは違っていた。</p>
+  </main>
+  <div class="controls" role="group" aria-label="再生コントロール">
+    <div class="control-row">
+      <button class="iconbtn" id="prevBtn" aria-label="前の時代">‹</button>
+      <input id="scrub" type="range" min="0" max="23" step="1" value="0" aria-label="時代を移動" />
+      <button class="iconbtn" id="playBtn" aria-label="一時停止">Ⅱ</button>
+      <button class="iconbtn" id="nextBtn" aria-label="次の時代">›</button>
+    </div>
+    <div class="hint">左右スワイプでも移動できます</div>
+  </div>
+  <section id="sheet" aria-label="史実と出典">
+    <button class="iconbtn close" id="closeSheet" aria-label="閉じる">×</button>
+    <h2 id="sheetTitle">史実メモ</h2>
+    <p id="sheetFact"></p>
+    <p class="note">映像内の建物・人物・船・光景は、時代を直感的に伝えるための象徴表現です。考古学上・史料上の確定事項と、ドラマ演出を分けて表示しています。</p>
+    <div id="sources"></div>
+  </section>
+  <div id="load-error"><b>Three.js を読み込めませんでした。</b>この作品は Three.js をCDNから読み込みます。ネット接続を確認するか、READMEの手順でローカルサーバーから開いてください。文章と年表はそのまま閲覧できます。</div>
+</div>
+<script type="module">
+const chapters = [
+  {era:'約3万7000年前〜',title:'列島に、人がいた。',fact:'日本列島では約3万7000年前から人類の活動が確認されている。石器を携え、気候と獲物を追いながら暮らした。',drama:'海と陸の境目さえ、いまの日本とは違っていた。',visual:'dawn',palette:['#07111c','#122a3b','#d8b66a'],src:'prehistoric'},
+  {era:'紀元前約1万4000年〜',title:'火のそばに、暮らしが根づく。',fact:'縄文時代には土器が広く用いられ、狩猟・採集・漁労を組み合わせた生活や、長く使われる集落が各地に営まれた。',drama:'炎を囲む時間が、土地の記憶になっていく。',visual:'jomon',palette:['#120d08','#332015','#e77b39'],src:'prehistoric'},
+  {era:'紀元前10世紀ごろ〜',title:'水田が、社会を変える。',fact:'国立歴史民俗博物館は、九州北部で水田稲作が紀元前10世紀ごろに始まり、列島各地へ広がったとする研究成果を示している。',drama:'同じ水を分け、同じ季節を待つ。村の結びつきも変わった。',visual:'rice',palette:['#07150f','#173727','#d6c56b'],src:'prehistoric'},
+  {era:'3世紀',title:'海の向こうに記された「倭」。',fact:'中国の歴史書「魏志倭人伝」には、倭の女王卑弥呼と邪馬台国が記され、239年に魏へ使節を送ったことが伝えられる。邪馬台国の所在地は確定していない。',drama:'文字の外にいた列島が、遠い国の記録に姿を現す。',visual:'mirror',palette:['#080909','#24211c','#e2bf69'],src:'prehistoric'},
+  {era:'3〜6世紀',title:'巨大な墓が、権力を語る。',fact:'各地に古墳が築かれ、とりわけ前方後円墳は広域の政治的関係を示す重要な手がかりとなる。ヤマト王権の形成が進んだ。',drama:'丘そのものが、名も残らぬ権力者の存在を叫んでいる。',visual:'kofun',palette:['#07100c','#173025','#91b36b'],src:'prehistoric'},
+  {era:'7世紀',title:'国を、仕組みで束ねる。',fact:'645年の政変を契機として政治改革が進み、7世紀後半から8世紀にかけて律令国家の制度が整えられていった。',drama:'人ではなく、制度で国を動かす時代へ。',visual:'gate',palette:['#100a0a','#3a1715','#e2aa56'],src:'prehistoric'},
+  {era:'710年〜',title:'奈良。都は、世界とつながる。',fact:'710年に平城京へ遷都。遣唐使などを通じて大陸の制度や文化を取り入れ、8世紀には天平文化が栄えた。',drama:'遠い大陸の思想と技術が、都の瓦にまで刻まれる。',visual:'pagoda',palette:['#0a1114','#1a3440','#d3ad65'],src:'prehistoric'},
+  {era:'794年〜',title:'平安京。言葉が花ひらく。',fact:'794年に都が平安京へ移る。10〜12世紀には王朝文化が発展し、仮名文字による文学も大きく花開いた。',drama:'夜の御簾の向こうで、書かれた言葉が千年を越える。',visual:'heian',palette:['#100c17','#281d3d','#d9bf8d'],src:'medieval'},
+  {era:'10〜12世紀',title:'武士が、前へ出る。',fact:'地方社会や荘園を背景に武士の力が拡大し、12世紀後半の争乱を経て、政治の重心は武家政権へ移っていく。',drama:'弓の弦が鳴るたび、都だけでは決まらない時代になる。',visual:'samurai',palette:['#0d0d0d','#252525','#b94236'],src:'medieval'},
+  {era:'1185年ごろ〜1333年',title:'鎌倉。武家政権の時代。',fact:'源平争乱後、源頼朝を中心に鎌倉で武家政権が形づくられ、御家人との主従関係を軸とする政治が展開した。',drama:'海と山に囲まれた町から、新しい統治の形が広がる。',visual:'kamakura',palette:['#081012','#152b2d','#8ab0a5'],src:'medieval'},
+  {era:'1274・1281年',title:'海の向こうから、巨大な軍勢。',fact:'元と高麗などによる軍勢が二度にわたり日本へ来襲した。文永の役（1274）と弘安の役（1281）である。',drama:'水平線は、境界ではなく戦場になった。',visual:'fleet',palette:['#071019','#102d43','#d6e1df'],src:'medieval'},
+  {era:'1336〜1573年',title:'室町。乱れながら、文化は交わる。',fact:'室町幕府のもとで政治と社会は変動し、日明貿易や都市文化が発展。1467年に始まる応仁の乱は京都を長く戦乱に巻き込んだ。',drama:'焼けた都の路地でさえ、人と物と芸能は行き交い続ける。',visual:'inkcity',palette:['#0b0b0b','#232323','#c6b792'],src:'medieval'},
+  {era:'15世紀後半〜1590年',title:'戦国。国のかたちを奪い合う。',fact:'各地の大名が領国支配を強め、鉄砲伝来やキリスト教布教など海外との接触も拡大。織田信長・豊臣秀吉らによって統一が進み、1590年に全国的な統一が達成された。',drama:'城、火縄銃、交易。戦い方も、支配の仕方も変わった。',visual:'castle',palette:['#0e0908','#371b15','#d35c34'],src:'medieval'},
+  {era:'1603〜19世紀半ば',title:'江戸。長い平和と、四つの窓口。',fact:'徳川家康が1603年に征夷大将軍となり、江戸幕府の時代が続く。対外関係は制限されたが、長崎・対馬・薩摩・松前などを通じて人・物・情報は往来した。',drama:'閉ざしたのではない。窓口を選び、世界とつながった。',visual:'edo',palette:['#081218','#19364a','#f1a34b'],src:'edo'},
+  {era:'1853〜1868年',title:'黒船。静けさが破れる。',fact:'1853年、ペリー艦隊が浦賀沖に来航。翌1854年の日米和親条約などを経て対外政策は大きく転換し、幕末の政治変動は1868年の新政府成立へつながった。',drama:'蒸気と砲口が、海の向こうの力を見せつけた。',visual:'blackship',palette:['#071017','#132b3a','#d8d2bb'],src:'modern'},
+  {era:'1868〜1912年',title:'明治。国家をつくり直す。',fact:'明治政府は中央集権化、学校制度、徴兵、産業化などを進めた。1889年に大日本帝国憲法が発布され、近代国家の制度が整備された。',drama:'鉄道と電信が、時間と距離の感覚まで塗り替える。',visual:'meiji',palette:['#0d1114','#26333b','#d47745'],src:'modern'},
+  {era:'1912〜1931年',title:'都市が、群衆の時代を呼ぶ。',fact:'大正から昭和初期にかけて都市化と大衆文化が進み、政党政治や普通選挙への動きも広がった。1923年には関東大震災が発生した。',drama:'新聞、電車、カフェ。速くなる日常の足元で社会も揺れる。',visual:'taisho',palette:['#0a0d13','#212a37','#d9ad66'],src:'modern'},
+  {era:'1931〜1945年',title:'戦争が、日常をのみ込む。',fact:'1930年代に中国との戦争が拡大し、1941年にはアジア・太平洋戦争へ広がった。戦争は日本国内だけでなく、アジア・太平洋の広い地域に甚大な被害と犠牲をもたらした。1945年、日本は降伏した。',drama:'灯りは消され、暮らしの一つ一つが戦争に組み込まれていった。',visual:'war',palette:['#070707','#1d1a18','#a24c35'],src:'war'},
+  {era:'1945〜1952年',title:'焼け跡から、制度を組み直す。',fact:'敗戦後、日本は連合国軍の占領下で政治・社会制度の大幅な改革を経験した。日本国憲法は1947年5月3日に施行され、1952年にサンフランシスコ平和条約が発効して主権を回復した。',drama:'失われた街に、新しいルールと暮らしが積み上がる。',visual:'rebuild',palette:['#0a0d10','#22303a','#d9bf78'],src:'constitution'},
+  {era:'1955〜1973年',title:'速く、遠く、高く。',fact:'高度経済成長のもとで産業と都市が大きく変化し、生活水準も向上した。1964年には東海道新幹線が開業し、東京オリンピックが開催された。',drama:'昨日まで遠かった場所が、今日から日帰りになる。',visual:'train',palette:['#07121b','#12324c','#e5f1f2'],src:'postwar'},
+  {era:'1973〜1989年',title:'成長の形が、変わる。',fact:'1973年の石油危機などを経て、経済と産業は省エネルギー化や高付加価値化を進めた。1980年代後半には資産価格が大きく上昇し、いわゆるバブル景気へ向かった。',drama:'節約の時代を越え、街の光は次第に過剰なほど明るくなる。',visual:'neon',palette:['#050810','#151c35','#d76ab5'],src:'postwar'},
+  {era:'1989〜2011年',title:'平成。繁栄の後の、長い問い。',fact:'バブル経済崩壊後、日本は長期的な経済停滞や社会構造の変化に直面した。1995年には阪神・淡路大震災と地下鉄サリン事件が起きた。',drama:'「当たり前」が揺らぐたび、社会は安全と信頼を問い直した。',visual:'heisei',palette:['#071015','#142833','#76a6b8'],src:'postwar'},
+  {era:'2011年',title:'3月11日。海が街を変えた。',fact:'2011年3月11日、東北地方太平洋沖地震と巨大津波が発生し、東日本大震災となった。東京電力福島第一原子力発電所事故も発生した。',drama:'見慣れた風景が、一日のうちに別の世界になる。',visual:'quake',palette:['#061017','#153342','#a8d0d5'],src:'postwar'},
+  {era:'2019〜2026年',title:'令和。歴史は、いまも続く。',fact:'2019年に令和へ改元。2020年からの新型コロナウイルス感染症の世界的流行を経て、2021年には東京オリンピック・パラリンピックが開催された。2024年には能登半島地震が発生した。',drama:'教科書の最後のページは、私たちの今日につながっている。',visual:'now',palette:['#050b12','#142842','#68b7e6'],src:'now'}
+];
+const sourceSets = {
+  prehistoric:[['国立歴史民俗博物館「第1展示室 先史・古代」','https://www.rekihaku.ac.jp/exhibitions/room1/','約3万7000年前の旧石器時代、水田稲作の開始年代など'],['国立歴史民俗博物館「弥生ってなに?!」','https://archive.rekihaku.ac.jp/exhibitions/project/old/140715/index.html','弥生時代・水田稲作開始年代に関する展示解説']],
+  medieval:[['国立歴史民俗博物館「第2展示室 中世」','https://www.rekihaku.ac.jp/exhibitions/room2/','平安〜安土桃山、武士・都市・国際関係・文化']],
+  edo:[['国立歴史民俗博物館「第3展示室 近世」','https://www.rekihaku.ac.jp/exhibitions/room3/','江戸期の社会と、長崎・対馬・薩摩・松前を通じた対外交流']],
+  modern:[['国立国会図書館「史料にみる日本の近代」','https://www.ndl.go.jp/modern/','開国から戦後政治までの史料と年表'],['国立歴史民俗博物館「第5展示室 近代」','https://www.rekihaku.ac.jp/exhibitions/room5/','19世紀末〜20世紀初頭の近代社会']],
+  war:[['国立歴史民俗博物館「第6展示室 現代」','https://www.rekihaku.ac.jp/exhibitions/room6/','1930年代以降の戦争と戦後生活'],['国立国会図書館「史料にみる日本の近代」','https://www.ndl.go.jp/modern/','近代政治・社会史料']],
+  constitution:[['国立公文書館「日本国憲法」','https://www.archives.go.jp/owning/mini_img/1-4.html','1946年公布、1947年5月3日施行'],['国立国会図書館「史料にみる日本の近代」','https://www.ndl.go.jp/modern/','占領期・講和まで']],
+  postwar:[['国立歴史民俗博物館「第6展示室 現代」','https://www.rekihaku.ac.jp/exhibitions/room6/','戦後生活と高度経済成長'],['気象庁「平成23年（2011年）東北地方太平洋沖地震」','https://ds.data.jma.go.jp/eqev/data/tsunamihyoka/20110311Tohokuchihoutaiheiyouoki/index.html','2011年3月11日の地震・津波に関する公式記録']],
+  now:[['厚生労働省「新型コロナウイルス感染症 報道発表」','https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000121431_00106.html','2020年以降の国内状況に関する公式記録'],['IOC「Tokyo 2020」','https://olympics.com/en/olympic-games/tokyo-2020','2021年に開催された東京2020大会'],['内閣府「令和6年能登半島地震」','https://www.bousai.go.jp/updates/r60101notojishin/','2024年能登半島地震の政府記録']]
+};
+
+const $=s=>document.querySelector(s), app=$('#app'), canvas=$('#webgl');
+const eraEl=$('#era'),titleEl=$('#title'),factEl=$('#fact'),dramaticEl=$('#dramatic'),countEl=$('#count'),playBtn=$('#playBtn'),scrub=$('#scrub'),topProgress=$('#topline i');
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let index=0,playing=!reduced,chapterElapsed=0,lastTime=performance.now(),switching=false;
+const DURATION=5600;
+
+function renderText(i,soft=false){
+  index=(i+chapters.length)%chapters.length; const c=chapters[index];
+  if(soft){app.classList.add('switching');setTimeout(()=>{applyText(c);setTimeout(()=>app.classList.remove('switching'),50)},150)} else applyText(c);
+  scrub.value=String(index); scrub.style.setProperty('--scrub-p',`${(index/(chapters.length-1))*100}%`);
+  countEl.textContent=`${String(index+1).padStart(2,'0')} / ${chapters.length}`;
+  document.documentElement.style.setProperty('--accent',c.palette[2]);
+  renderSheet(); chapterElapsed=0;
+}
+function applyText(c){eraEl.textContent=c.era;titleEl.textContent=c.title;factEl.textContent=c.fact;dramaticEl.textContent=c.drama;}
+function renderSheet(){const c=chapters[index];$('#sheetTitle').textContent=`${c.era} — ${c.title}`;$('#sheetFact').textContent=c.fact;const list=sourceSets[c.src]||[];$('#sources').innerHTML=list.map(([n,u,d])=>`<a class="source-link" href="${u}" target="_blank" rel="noopener">${n}<small>${d}</small></a>`).join('');}
+function go(n){if(switching)return;switching=true;renderText(n,true);setTimeout(()=>{if(window.__threeReady) buildChapter(index);switching=false},165)}
+function setPlaying(v){playing=v;playBtn.textContent=v?'Ⅱ':'▶';playBtn.setAttribute('aria-label',v?'一時停止':'再生');lastTime=performance.now()}
+$('#prevBtn').onclick=()=>go(index-1);$('#nextBtn').onclick=()=>go(index+1);playBtn.onclick=()=>setPlaying(!playing);
+scrub.oninput=e=>go(Number(e.target.value));
+const sheet=$('#sheet');function toggleSheet(v=!sheet.classList.contains('open')){sheet.classList.toggle('open',v);$('#infoBtn').setAttribute('aria-expanded',String(v));if(v)setPlaying(false)}
+$('#infoBtn').onclick=()=>toggleSheet();$('#closeSheet').onclick=()=>toggleSheet(false);
+let sx=0,sy=0;$('#stage').addEventListener('pointerdown',e=>{sx=e.clientX;sy=e.clientY},{passive:true});$('#stage').addEventListener('pointerup',e=>{const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.abs(dx)>48&&Math.abs(dx)>Math.abs(dy)*1.2)go(index+(dx<0?1:-1))},{passive:true});
+renderText(0);
+
+let THREE,renderer,scene,camera,world,ambient,keyLight,clock,animators=[],particles=null;
+function hex(s){return new THREE.Color(s)}
+function material(color,rough=.72,metal=.08,emissive=null){return new THREE.MeshStandardMaterial({color:hex(color),roughness:rough,metalness:metal,emissive:emissive?hex(emissive):0x000000,emissiveIntensity:emissive ? .65 : 0})}
+function mesh(g,m,parent=world){const o=new THREE.Mesh(g,m);parent.add(o);return o}
+function box(x,y,z,color,pos=[0,0,0],rot=[0,0,0],parent=world){const o=mesh(new THREE.BoxGeometry(x,y,z),material(color),parent);o.position.set(...pos);if(rot && rot.length===3)o.rotation.set(...rot);return o}
+function cyl(rt,rb,h,color,pos=[0,0,0],rot=[0,0,0],parent=world,seg=24){const o=mesh(new THREE.CylinderGeometry(rt,rb,h,seg),material(color),parent);o.position.set(...pos);if(rot && rot.length===3)o.rotation.set(...rot);return o}
+function sphere(r,color,pos=[0,0,0],parent=world,em=null){const o=mesh(new THREE.SphereGeometry(r,24,16),material(color,.5,.08,em),parent);o.position.set(...pos);return o}
+function cone(r,h,color,pos=[0,0,0],parent=world){const o=mesh(new THREE.ConeGeometry(r,h,24),material(color),parent);o.position.set(...pos);return o}
+function torus(R,r,color,pos=[0,0,0],rot=[0,0,0],parent=world){const o=mesh(new THREE.TorusGeometry(R,r,10,48),material(color,.45,.6),parent);o.position.set(...pos);if(rot && rot.length===3)o.rotation.set(...rot);return o}
+function line(points,color,opacity=1,parent=world){const geo=new THREE.BufferGeometry().setFromPoints(points.map(p=>new THREE.Vector3(...p)));const mat=new THREE.LineBasicMaterial({color:hex(color),transparent:opacity<1,opacity});const o=new THREE.Line(geo,mat);parent.add(o);return o}
+function ground(color='#101216',y=-2.05){const g=mesh(new THREE.PlaneGeometry(30,30),new THREE.MeshStandardMaterial({color:hex(color),roughness:1}));g.rotation.x=-Math.PI/2;g.position.y=y;return g}
+function addStars(count=80,color='#e8e0cb',spread=12){const a=new Float32Array(count*3);for(let i=0;i<count;i++){a[i*3]=(Math.random()-.5)*spread;a[i*3+1]=Math.random()*8-1;a[i*3+2]=-2-Math.random()*10}const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(a,3));const mat=new THREE.PointsMaterial({color:hex(color),size:.045,transparent:true,opacity:.7});const p=new THREE.Points(geo,mat);world.add(p);animators.push(t=>{p.rotation.y=t*.012});return p}
+function addDust(count=120,color='#d6b36e'){const a=new Float32Array(count*3);for(let i=0;i<count;i++){a[i*3]=(Math.random()-.5)*7;a[i*3+1]=Math.random()*6-2;a[i*3+2]=(Math.random()-.5)*5}const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(a,3));const mat=new THREE.PointsMaterial({color:hex(color),size:.035,transparent:true,opacity:.45,depthWrite:false});const p=new THREE.Points(geo,mat);world.add(p);animators.push(t=>{p.rotation.y=t*.025;p.position.y=Math.sin(t*.25)*.08});return p}
+function roof(y,w=2.2,d=.22,color='#4c3326',parent=world){const r=box(w,.12,.95,color,[0,y,0],[0,0,0],parent);r.scale.x=1;r.rotation.z=.02;return r}
+function hut(x,z,s=1){const g=new THREE.Group();world.add(g);g.position.set(x,-1.65,z);cyl(.65*s,.78*s,.9*s,'#4e3525',[0,.45,0],[0,0,0],g,16);const r=cone(.92*s,.85*s,'#2a2118',[0,1.12,0],g);r.scale.y=.8;return g}
+function fire(x=0,y=-1.4,z=0){const glow=sphere(.18,'#ffb24c',[x,y,z],world,'#ff6b22');const light=new THREE.PointLight(0xff7b36,4,5,2);light.position.set(x,y+.4,z+.4);world.add(light);for(let i=0;i<10;i++){const s=sphere(.025+Math.random()*.025,'#ffb24c',[x+(Math.random()-.5)*.25,y+.2+Math.random()*.2,z+(Math.random()-.5)*.15]);const base=s.position.clone();animators.push(t=>{s.position.y=base.y+(t*.6+i*.23)%1.2;s.position.x=base.x+Math.sin(t*2+i)*.08;s.material.opacity=1-((t*.6+i*.23)%1.2)/1.2;s.material.transparent=true})}animators.push(t=>{glow.scale.y=1.15+Math.sin(t*7)*.18;light.intensity=3.6+Math.sin(t*8)*.7});}
+function mountain(x,y,z,s,color='#12191c'){const m=cone(1.4*s,2.8*s,color,[x,y,z]);m.scale.x=1.6;return m}
+function buildDawn(){ground('#0a1114');addStars(120);mountain(-1.7,-.9,-3,1.2,'#101c22');mountain(1.1,-1.1,-3.7,1.5,'#0b171c');for(let i=0;i<6;i++){const p=cyl(.025,.035,.55,'#2d2720',[(i-2.5)*.34,-1.72,-.2+(i%2)*.25]);const head=sphere(.08,'#2a211c',[p.position.x,-1.38,p.position.z]);}addDust(70,'#9bc1cc');}
+function buildJomon(){ground('#100c08');hut(-1.25,.3,.9);hut(1.35,.65,.78);fire(0,-1.55,.4);addStars(75,'#ffe2a8');for(let i=0;i<5;i++){const t=cyl(.03,.04,.55,'#2c1e16',[-.7+i*.35,-1.72,.1]);sphere(.075,'#261b16',[-.7+i*.35,-1.37,.1])}}
+function buildRice(){ground('#0d1910');for(let z=-1;z<3;z+=.45){for(let x=-2.5;x<2.6;x+=.32){const h=.24+Math.random()*.22;const s=cyl(.012,.014,h,'#8da34a',[x,-1.9,z]);s.rotation.z=(Math.random()-.5)*.12}}for(let i=-3;i<=3;i++)line([[-3,-1.82,i*.5],[3,-1.82,i*.5]],'#537f72',.35);const sun=sphere(.52,'#d5bd6a',[1.8,1.3,-4],world,'#d5bd6a');addDust(60,'#d3c36d');}
+function buildMirror(){ground('#0b0b0a');addStars(90);const d=cyl(1.05,1.05,.08,'#b58745',[0,.2,0],[Math.PI/2,0,0]);d.material.metalness=.9;d.material.roughness=.25;torus(.78,.025,'#e7c276',[0,.2,.07],[0,0,0]);for(let i=0;i<8;i++){const a=i*Math.PI/4;box(.28,.045,.08,'#d7a64e',[Math.cos(a)*.55,.2+Math.sin(a)*.55,.08],[0,0,a]);}const ring=new THREE.PointLight(0xe6b95f,3,6);ring.position.set(0,.2,1.5);world.add(ring);animators.push(t=>{d.rotation.z=t*.15;ring.intensity=2.4+Math.sin(t*1.8)*.6});}
+function buildKofun(){ground('#0c1810',-2.2);const g=new THREE.Group();world.add(g);g.rotation.x=-.78;g.rotation.z=.22;g.position.y=-.65;const circle=cyl(1.15,1.15,.18,'#294d31',[0,.25,0],[Math.PI/2,0,0],g,48);const stem=box(1.35,1.35,.18,'#294d31',[0,-.75,0],[0,0,0],g);const moat=torus(1.45,.16,'#294b5c',[0,.22,-.05],[0,0,0],g);moat.scale.y=1;addDust(80,'#bdd09e');}
+function buildGate(){ground('#130d0d');const verm='#8b2b24';for(const x of [-1.25,1.25])box(.18,3.4,.18,verm,[x,-.35,0]);box(3.0,.22,.26,verm,[0,1.1,0]);box(3.5,.16,.28,'#b35b35',[0,1.42,0]);for(let i=0;i<4;i++)box(.16,.9,.16,'#8b2b24',[-.72+i*.48,-1.53,-.35]);addDust(80,'#d4aa6a');}
+function buildPagoda(){ground('#0b1114');addStars(110,'#f2dfb6');const g=new THREE.Group();world.add(g);g.position.y=-1.85;for(let n=0;n<5;n++){const y=n*.55;box(.38,.52,.38,'#4a2a20',[0,y+.25,0],[0,0,0],g);const w=2.7-n*.34;const r=box(w,.11,.9,'#243139',[0,y+.54,0],[0,0,0],g);r.rotation.z=.01;}cyl(.035,.045,.95,'#d0a758',[0,3.0,0],[],g);const moon=sphere(.56,'#d9d6c9',[2,1.45,-4],world,'#d9d6c9');}
+function buildHeian(){ground('#100d17');addStars(100,'#e9d9bc');const moon=sphere(.72,'#d8d0b8',[1.75,1.25,-4],world,'#d8d0b8');const g=new THREE.Group();world.add(g);g.position.y=-1.65;for(const x of [-1.35,-.45,.45,1.35])box(.1,1.65,.1,'#7f2d2f',[x,.8,0],[],g);box(3.2,.12,.55,'#291c24',[0,1.65,0],[],g);for(let i=0;i<8;i++)line([[-1.55,-.7+i*.18,.04],[1.55,-.7+i*.18,.04]],'#c9ab8f',.18,g);addDust(55,'#d8c0a5');}
+function sword(x,angle){const g=new THREE.Group();world.add(g);g.position.set(x,-.2,0);g.rotation.z=angle;box(.09,2.35,.06,'#b9c2c5',[0,.45,0],[],g);box(.55,.08,.12,'#6f4931',[0,-.72,0],[],g);box(.12,.5,.12,'#2b211d',[0,-1.0,0],[],g);return g}
+function buildSamurai(){ground('#0d0d0d');addDust(130,'#a65b47');sword(-.45,.52);sword(.45,-.52);const disc=sphere(.95,'#7c1f22',[0,.55,-4],world,'#7c1f22');disc.scale.z=.2;}
+function buildKamakura(){ground('#091315');mountain(-1.7,-.7,-3,1.3,'#132224');mountain(1.5,-.9,-3.6,1.6,'#0c1c20');const gate=new THREE.Group();world.add(gate);gate.position.y=-1.5;box(.16,2.1,.16,'#5c392a',[-1,1,0],[],gate);box(.16,2.1,.16,'#5c392a',[1,1,0],[],gate);box(2.5,.16,.3,'#6f4d37',[0,1.85,0],[],gate);addDust(80,'#88afb0');}
+function boat(x,z,s=1,color='#30251e'){const g=new THREE.Group();world.add(g);g.position.set(x,-1.45,z);const hull=box(1.25*s,.24*s,.48*s,color,[0,0,0],[],g);hull.rotation.z=.03;box(.05,.95,.05,'#5b4731',[0,.62,0],[],g);const sail=mesh(new THREE.PlaneGeometry(.78*s,.7*s),new THREE.MeshStandardMaterial({color:0xc4bda5,side:THREE.DoubleSide,roughness:1}),g);sail.position.set(.4*s,.7,0);sail.rotation.y=Math.PI/2;return g}
+function buildFleet(){ground('#08131a',-2.0);for(let i=0;i<6;i++){const b=boat(-2+i*.78,-.5-(i%2)*.9,.72);animators.push(t=>{b.position.y=-1.45+Math.sin(t*1.6+i)*.06;b.rotation.z=Math.sin(t*1.2+i)*.025})}for(let k=0;k<8;k++){const pts=[];for(let i=0;i<20;i++){const x=-4+i*.42;pts.push([x,-1.82+k*.09+Math.sin(i*.7+k)*.05,1.0-k*.16])}const l=line(pts,'#7db0c5',.32);animators.push(t=>{l.position.x=Math.sin(t*.8+k)*.08})}addDust(70,'#d8e0db');}
+function buildInkCity(){ground('#0d0d0d');mountain(-1.9,-.65,-4,1.8,'#171717');mountain(1.1,-.9,-3.6,1.4,'#202020');for(let i=0;i<8;i++){const x=-2.4+i*.68;box(.5,.3+Math.random()*.35,.5,'#2d2b28',[x,-1.7,-.2+(i%3)*.3]);const l=sphere(.055,'#d8b66f',[x,-1.38,-.52],world,'#d8b66f');}addDust(120,'#aaa18c');}
+function buildCastle(){ground('#100c0b');const g=new THREE.Group();world.add(g);g.position.y=-1.82;for(let n=0;n<4;n++){const w=2.55-n*.42;box(w,.42,1.2-n*.14,n%2?'#dad6ca':'#e8e5db',[0,n*.5+.25,0],[],g);const r=box(w+ .28,.12,1.45-n*.12,'#1d252a',[0,n*.5+.5,0],[],g);r.rotation.z=.015}for(let i=0;i<7;i++){const f=sphere(.1,'#ff6c32',[-2.2+i*.7,-1.55,-.3],world,'#ff4b20');animators.push(t=>{f.scale.y=1.3+Math.sin(t*7+i)*.4;f.position.y=-1.55+Math.sin(t*5+i)*.06})}addDust(120,'#d56b45');}
+function lantern(x,y,z){const g=new THREE.Group();world.add(g);g.position.set(x,y,z);const l=cyl(.12,.12,.23,'#e98e3f',[0,0,0],[],g,12);l.material.emissive=hex('#bd532b');l.material.emissiveIntensity=.9;return g}
+function buildEdo(){ground('#08131a');const bridge=box(4.8,.14,.7,'#4b3023',[0,-1.15,.1]);bridge.rotation.z=-.04;for(let i=0;i<6;i++)box(.1,.9,.1,'#463126',[-2+i*.8,-1.62,.1]);for(let i=0;i<8;i++){const x=-2.2+i*.63;lantern(x,-.65,-.05);box(.48,.55,.42,'#25201c',[x,-1.72,-.9+(i%2)*.25])}boat(1.45,.8,.62);addStars(80,'#e7d4ad');}
+function buildBlackShip(){ground('#071017');const ship=new THREE.Group();world.add(ship);ship.position.set(0,-1.1,-.1);box(3.4,.48,.82,'#111315',[0,0,0],[],ship);for(let i=0;i<3;i++){cyl(.18,.22,1.6,'#1b1b1b',[-.75+i*.75,1.0,0],[],ship,18);const smoke=sphere(.35,'#252525',[-.75+i*.75,1.9,0],ship);smoke.material.transparent=true;smoke.material.opacity=.45;animators.push(t=>{smoke.position.y=1.9+((t*.25+i*.25)%1.1);smoke.scale.setScalar(1+((t*.25+i*.25)%1.1)*.55);smoke.material.opacity=.55-((t*.25+i*.25)%1.1)*.35})}for(let i=0;i<5;i++)sphere(.09,'#222',[ -1.4+i*.7,.15,-.45],ship);addDust(55,'#ccd0c2');}
+function buildMeiji(){ground('#101215');for(let i=-3;i<4;i++){const x=i*.75;box(.12,2,.12,'#3f3329',[x,-1.05,-1.0]);line([[x,.0,-1],[x+.75,.0,-1]],'#69604f',.8)}const rail1=box(.06,.06,8,'#9ba0a0',[-.52,-1.82,.4]);const rail2=box(.06,.06,8,'#9ba0a0',[.52,-1.82,.4]);for(let z=-3;z<3;z+=.45)box(1.25,.08,.12,'#4b3325',[0,-1.87,z]);const train=new THREE.Group();world.add(train);train.position.set(0,-1.22,.9);box(1.1,.72,2.0,'#262b2c',[0,0,0],[],train);cyl(.22,.22,.3,'#16191a',[0,.72,-.45],[],train);const glow=new THREE.PointLight(0xffbd67,3,5);glow.position.set(0,-.85,-.6);train.add(glow);animators.push(t=>{train.position.z=((t*.55)%8)-4});addDust(90,'#d48654');}
+function buildTaisho(){ground('#0c0f16');for(let i=0;i<10;i++){const x=-2.5+(i%5)*1.2,z=-1.1-Math.floor(i/5)*1.2,h=.8+Math.random()*1.4;box(.8,h,.7,i%3===0?'#5a4a3c':'#28313a',[x,-2+h/2,z]);for(let j=0;j<3;j++){const w=sphere(.045,'#e6b56c',[x-.2+j*.2,-1.6+Math.random()*h,z+.36],world,'#d98f47')}}for(let i=0;i<5;i++)line([[-2.8,-.8+i*.32,.4],[2.8,-.8+i*.32,.4]],'#af9c83',.15);addDust(110,'#d7b06b');}
+function buildWar(){ground('#090909');for(let i=0;i<9;i++){const x=-2.6+i*.65,h=.5+Math.random()*1.7;const b=box(.5,h,.55,'#191919',[x,-2+h/2,-.5-(i%3)*.35]);if(i%3===0)b.rotation.z=.08}for(let i=0;i<10;i++){const beam=line([[0,2,2],[(Math.random()-.5)*7,-.1,-4]],'#ddd7c1',.08);animators.push(t=>{beam.rotation.z=Math.sin(t*.35+i)*.12})}addDust(220,'#8d7666');}
+function buildRebuild(){ground('#0d1215');for(let i=0;i<7;i++){const x=-2.5+i*.82,h=.65+(i%3)*.35;box(.58,h,.6,i%2?'#2b3338':'#3a3430',[x,-2+h/2,-.6]);const crane=line([[x+.2,-1.1,-.4],[x+.2,.9,-.4],[x+1.1,.9,-.4]],'#b89b64',.7)}const sun=sphere(.7,'#d8c37e',[1.8,1.45,-4],world,'#d8c37e');addDust(80,'#d9c592');}
+function buildTrain(){ground('#07121b');const trackY=-1.78;for(let z=-4;z<4;z+=.4)box(1.7,.05,.09,'#7c7c78',[0,trackY,z]);box(.05,.05,9,'#b6c1c4',[-.65,trackY+.02,0]);box(.05,.05,9,'#b6c1c4',[.65,trackY+.02,0]);const train=new THREE.Group();world.add(train);train.position.set(0,-1.22,1.2);const body=box(1.35,.82,3.2,'#e5eded',[0,0,0],[],train);const nose=cone(.68,1.5,'#dbe5e7',[0,0,-2.15],train);nose.rotation.x=-Math.PI/2;for(let i=0;i<7;i++)box(.18,.16,.03,'#1c3647',[-.48+i*.16,.08,-1.61],[],train);animators.push(t=>{train.position.z=2.8-((t*.95)%8)});for(let i=0;i<22;i++)line([[-3,-1.25+i*.02,-1.5+i*.12],[3,-1.25+i*.02,-1.5+i*.12]],'#b9d9e0',.045);}
+function buildNeon(){ground('#080913');for(let i=0;i<12;i++){const x=-2.7+(i%6)*1.05,z=-.8-Math.floor(i/6)*1.2,h=1+Math.random()*1.9;const b=box(.72,h,.7,'#171a27',[x,-2+h/2,z]);for(let w=0;w<4;w++){const c=(i+w)%2?'#62b8d0':'#d064b1';const light=box(.08,.12,.02,c,[x-.25+w*.16,-1.7+Math.random()*h,z+.36]);light.material.emissive=hex(c);light.material.emissiveIntensity=1.2}}const ring=torus(1.2,.02,'#d068b6',[0,.25,-2],[0,0,0]);animators.push(t=>{ring.rotation.z=t*.18});addDust(80,'#b976bd');}
+function buildHeisei(){ground('#081216');for(let i=0;i<10;i++){const x=-2.6+(i%5)*1.25,z=-.8-Math.floor(i/5)*1.4,h=.8+Math.random()*1.6;box(.78,h,.72,'#1c2b31',[x,-2+h/2,z])}const pulse=torus(1.15,.035,'#7aaec0',[0,.1,-1],[0,0,0]);animators.push(t=>{const s=1+((t*.35)%1.8);pulse.scale.setScalar(s);pulse.material.opacity=Math.max(0,.8-(s-1)*.5);pulse.material.transparent=true});addDust(85,'#82b4c0');}
+function buildQuake(){ground('#07121a');for(let i=0;i<8;i++){const x=-2.3+i*.65,h=.4+(i%3)*.45;const b=box(.52,h,.55,'#1b3039',[x,-2+h/2,-.6]);b.rotation.z=(i%2?.06:-.04)}const wave=[];for(let i=0;i<60;i++){const x=-3+i*.1;wave.push([x,-.9+Math.sin(i*.5)*.18,-.1])}const l=line(wave,'#a3d5e0',.8);animators.push(t=>{l.position.x=Math.sin(t*.8)*.18});for(let i=0;i<8;i++){const w=[];for(let j=0;j<40;j++){const x=-3+j*.15;w.push([x,-1.7+i*.09+Math.sin(j*.35+i)*.05,.2+i*.08])}line(w,'#5f9daf',.22)}addDust(95,'#a7ced4');}
+function buildNow(){ground('#06101b');addStars(140,'#a9d4ee');const globe=sphere(1.35,'#0f2f52',[0,.2,-1]);globe.material.wireframe=true;globe.material.emissive=hex('#164b79');globe.material.emissiveIntensity=.5;for(let i=0;i<26;i++){const a=Math.random()*Math.PI*2,b=(Math.random()-.5)*Math.PI,x=Math.cos(b)*Math.cos(a)*1.38,y=.2+Math.sin(b)*1.38,z=-1+Math.cos(b)*Math.sin(a)*1.38;const p=sphere(.035,'#8ad4ff',[x,y,z],world,'#68b7e6');}for(let i=0;i<14;i++){const a=i/14*Math.PI*2;line([[Math.cos(a)*1.45,.2+Math.sin(a*.7)*.3,-1],[Math.cos(a+1.7)*1.45,.2+Math.sin((a+1.7)*.7)*.3,-1]],'#63b9e6',.12)}animators.push(t=>{globe.rotation.y=t*.18;globe.rotation.x=Math.sin(t*.18)*.08});addDust(60,'#8cc8ec');}
+const builders={dawn:buildDawn,jomon:buildJomon,rice:buildRice,mirror:buildMirror,kofun:buildKofun,gate:buildGate,pagoda:buildPagoda,heian:buildHeian,samurai:buildSamurai,kamakura:buildKamakura,fleet:buildFleet,inkcity:buildInkCity,castle:buildCastle,edo:buildEdo,blackship:buildBlackShip,meiji:buildMeiji,taisho:buildTaisho,war:buildWar,rebuild:buildRebuild,train:buildTrain,neon:buildNeon,heisei:buildHeisei,quake:buildQuake,now:buildNow};
+
+function clearWorld(){if(world){scene.remove(world);world.traverse(o=>{if(o.geometry)o.geometry.dispose?.();if(o.material){const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>m.dispose?.())}})}animators=[];world=new THREE.Group();scene.add(world)}
+function buildChapter(i){const c=chapters[i];clearWorld();scene.background=hex(c.palette[0]);scene.fog.color=hex(c.palette[0]);ambient.color=hex(c.palette[1]);keyLight.color=hex(c.palette[2]);builders[c.visual]?.();camera.position.set(0,.05,7.8);camera.lookAt(0,-.2,0)}
+function resize(){if(!renderer)return;const w=innerWidth,h=innerHeight;renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(w,h,false);camera.aspect=w/h;camera.fov=w<h?43:34;camera.updateProjectionMatrix()}
+function animate(now){requestAnimationFrame(animate);const dt=Math.min(.05,(now-lastTime)/1000);lastTime=now;const t=now/1000;if(window.__threeReady){animators.forEach(fn=>fn(t,dt));world.rotation.y=Math.sin(t*.16)*.035;camera.position.y=.05+Math.sin(t*.28)*.035;renderer.render(scene,camera)}if(playing&&!sheet.classList.contains('open')){chapterElapsed+=dt*1000;const p=Math.min(1,chapterElapsed/DURATION);topProgress.style.width=`${((index+p)/chapters.length)*100}%`;if(chapterElapsed>=DURATION)go(index+1)}else topProgress.style.width=`${(index/chapters.length)*100}%`;}
+
+async function boot(){
+  try{
+    THREE=await import('https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.min.js');
+    renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
+    scene=new THREE.Scene();scene.fog=new THREE.Fog(0x05070b,7,19);camera=new THREE.PerspectiveCamera(43,innerWidth/innerHeight,.1,80);camera.position.set(0,.05,7.8);
+    ambient=new THREE.HemisphereLight(0x667788,0x080808,2.1);scene.add(ambient);keyLight=new THREE.DirectionalLight(0xffd89a,3.0);keyLight.position.set(-2.5,4,4);scene.add(keyLight);const rim=new THREE.DirectionalLight(0x7eb5d6,1.4);rim.position.set(3,1,-2);scene.add(rim);
+    window.__threeReady=true;resize();buildChapter(index);addEventListener('resize',resize,{passive:true});
+  }catch(err){console.error(err);$('#load-error').style.display='block';setPlaying(false)}
+}
+boot();requestAnimationFrame(animate);
+</script>
+</body>
+</html>
